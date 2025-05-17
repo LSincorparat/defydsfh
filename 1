@@ -1,25 +1,33 @@
--- Plutonium Lib v1.0
--- A modern Roblox exploit GUI library with dark theme and neon orange accents
--- Designed for Synapse, Fluxus, and other executor environments
+-- Stratus v2.0
+-- A next-generation Roblox GUI library with futuristic design
+-- Optimized for Synapse X, Fluxus, and other executors
 
-if not getgenv().PlutoniumSettings then
-    getgenv().PlutoniumSettings = {
+if not getgenv().StratusSettings then
+    getgenv().StratusSettings = {
         Theme = {
-            Main = Color3.fromRGB(20, 20, 25),
-            Secondary = Color3.fromRGB(30, 30, 35),
+            Main = Color3.fromRGB(15, 15, 20),
+            Secondary = Color3.fromRGB(25, 25, 30),
             Text = Color3.fromRGB(240, 240, 240),
-            Accent = Color3.fromRGB(255, 100, 0),
-            DarkAccent = Color3.fromRGB(200, 80, 0),
-            Outline = Color3.fromRGB(50, 50, 55),
-            Notification = Color3.fromRGB(25, 25, 30)
+            Accent = Color3.fromRGB(0, 150, 255),
+            DarkAccent = Color3.fromRGB(0, 120, 200),
+            Outline = Color3.fromRGB(40, 40, 45),
+            Notification = Color3.fromRGB(20, 20, 25),
+            Success = Color3.fromRGB(0, 200, 100),
+            Warning = Color3.fromRGB(255, 150, 0),
+            Error = Color3.fromRGB(255, 50, 50)
         },
-        Config = {}
+        Config = {
+            Font = Enum.Font.Gotham,
+            FontBold = Enum.Font.GothamBold,
+            AnimationSpeed = 0.15
+        }
     }
 end
 
-local PlutoniumLib = {}
-PlutoniumLib.__index = PlutoniumLib
+local Stratus = {}
+Stratus.__index = Stratus
 
+-- Animation Service with executor fallback
 local TweenService = {
     Create = function(instance, info, props)
         if game:GetService("TweenService") then
@@ -36,6 +44,7 @@ local TweenService = {
     end
 }
 
+-- Utility function for creating instances
 local function Create(class, props)
     local instance = Instance.new(class)
     for prop, value in pairs(props) do
@@ -50,15 +59,19 @@ local function Create(class, props)
     return instance
 end
 
-local function RippleEffect(button)
+-- Ripple effect for buttons
+local function RippleEffect(button, position)
     local ripple = Create("Frame", {
         Name = "Ripple",
         BackgroundColor3 = Color3.new(1, 1, 1),
-        BackgroundTransparency = 0.8,
+        BackgroundTransparency = 0.9,
         Size = UDim2.new(0, 0, 0, 0),
-        Position = UDim2.new(0.5, 0, 0.5, 0),
+        Position = position or UDim2.new(0.5, 0, 0.5, 0),
         AnchorPoint = Vector2.new(0.5, 0.5),
-        ZIndex = 10
+        ZIndex = 10,
+        Children = {
+            Create("UICorner", { CornerRadius = UDim.new(1, 0) })
+        }
     })
     
     ripple.Parent = button
@@ -73,20 +86,28 @@ local function RippleEffect(button)
     end)
 end
 
-function PlutoniumLib:SetTheme(themeTable)
+-- Set theme colors
+function Stratus:SetTheme(themeTable)
     for k, v in pairs(themeTable) do
-        if getgenv().PlutoniumSettings.Theme[k] then
-            getgenv().PlutoniumSettings.Theme[k] = v
+        if getgenv().StratusSettings.Theme[k] then
+            getgenv().StratusSettings.Theme[k] = v
         end
     end
+    -- TODO: Update existing UI elements with new theme
 end
 
-function PlutoniumLib:CreateWindow(title)
+-- Create main window
+function Stratus:CreateWindow(title)
+    local theme = getgenv().StratusSettings.Theme
+    local config = getgenv().StratusSettings.Config
+    
+    -- Create ScreenGui
     local screenGui = Create("ScreenGui", {
-        Name = "PlutoniumLib",
+        Name = "StratusUI",
         ResetOnSpawn = false
     })
     
+    -- Handle different executor environments
     if gethui then
         screenGui.Parent = gethui()
     elseif syn and syn.protect_gui then
@@ -96,8 +117,7 @@ function PlutoniumLib:CreateWindow(title)
         screenGui.Parent = game:GetService("CoreGui")
     end
     
-    local theme = getgenv().PlutoniumSettings.Theme
-    
+    -- Main window frame
     local mainWindow = Create("Frame", {
         Name = "MainWindow",
         Size = UDim2.new(0, 500, 0, 400),
@@ -107,17 +127,11 @@ function PlutoniumLib:CreateWindow(title)
         BorderSizePixel = 0,
         ClipsDescendants = true,
         Children = {
-            Create("UICorner", { CornerRadius = UDim.new(0, 6) }),
-            Create("TextLabel", {
-                Name = "Title",
-                Text = title,
-                TextColor3 = theme.Text,
-                TextSize = 18,
-                Font = Enum.Font.GothamBold,
-                BackgroundTransparency = 1,
-                Position = UDim2.new(0, 15, 0, 10),
-                Size = UDim2.new(0, 200, 0, 20),
-                TextXAlignment = Enum.TextXAlignment.Left
+            Create("UICorner", { CornerRadius = UDim.new(0, 8) }),
+            Create("UIStroke", {
+                Color = theme.Outline,
+                Thickness = 1,
+                Transparency = 0.5
             }),
             Create("Frame", {
                 Name = "TopBar",
@@ -125,10 +139,28 @@ function PlutoniumLib:CreateWindow(title)
                 BackgroundColor3 = theme.Secondary,
                 BorderSizePixel = 0,
                 Children = {
-                    Create("UICorner", { CornerRadius = UDim.new(0, 6) }),
-                    Create("UIStroke", {
-                        Color = theme.Outline,
-                        Thickness = 1
+                    Create("UICorner", { 
+                        CornerRadius = UDim.new(0, 8),
+                        Name = "TopBarCorner"
+                    }),
+                    Create("TextLabel", {
+                        Name = "Title",
+                        Text = title,
+                        TextColor3 = theme.Text,
+                        TextSize = 18,
+                        Font = config.FontBold,
+                        BackgroundTransparency = 1,
+                        Position = UDim2.new(0, 15, 0, 0),
+                        Size = UDim2.new(0, 200, 1, 0),
+                        TextXAlignment = Enum.TextXAlignment.Left
+                    }),
+                    Create("Frame", {
+                        Name = "AccentBar",
+                        Size = UDim2.new(1, 0, 0, 2),
+                        Position = UDim2.new(0, 0, 1, -2),
+                        AnchorPoint = Vector2.new(0, 1),
+                        BackgroundColor3 = theme.Accent,
+                        BorderSizePixel = 0
                     })
                 }
             }),
@@ -152,20 +184,21 @@ function PlutoniumLib:CreateWindow(title)
                 Children = {
                     Create("UIListLayout", {
                         SortOrder = Enum.SortOrder.LayoutOrder,
-                        Padding = UDim.new(0, 10)
+                        Padding = UDim.new(0, 12)
                     }),
                     Create("UIPadding", {
                         PaddingTop = UDim.new(0, 5),
-                        PaddingLeft = UDim.new(0, 5)
+                        PaddingLeft = UDim.new(0, 5),
+                        PaddingRight = UDim.new(0, 5)
                     })
                 }
             }),
             Create("TextLabel", {
                 Name = "Watermark",
-                Text = "Plutonium Lib v1.0",
-                TextColor3 = Color3.fromRGB(150, 150, 150),
+                Text = "Stratus v2.0",
+                TextColor3 = Color3.fromRGB(100, 100, 100),
                 TextSize = 12,
-                Font = Enum.Font.Gotham,
+                Font = config.Font,
                 BackgroundTransparency = 1,
                 Position = UDim2.new(1, -100, 1, -20),
                 Size = UDim2.new(0, 90, 0, 15),
@@ -177,18 +210,20 @@ function PlutoniumLib:CreateWindow(title)
     mainWindow.Parent = screenGui
     
     -- Draggable functionality
-    local dragging
-    local dragInput
-    local dragStart
-    local startPos
+    local dragging, dragInput, dragStart, startPos
     
     local function update(input)
         local delta = input.Position - dragStart
-        mainWindow.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        mainWindow.Position = UDim2.new(
+            startPos.X.Scale, 
+            startPos.X.Offset + delta.X, 
+            startPos.Y.Scale, 
+            startPos.Y.Offset + delta.Y
+        )
     end
     
     mainWindow.TopBar.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = true
             dragStart = input.Position
             startPos = mainWindow.Position
@@ -202,7 +237,7 @@ function PlutoniumLib:CreateWindow(title)
     end)
     
     mainWindow.TopBar.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
             dragInput = input
         end
     end)
@@ -219,23 +254,26 @@ function PlutoniumLib:CreateWindow(title)
         CurrentTab = nil
     }
     
-    setmetatable(window, PlutoniumLib)
+    setmetatable(window, Stratus)
     
+    -- Create tab method
     function window:CreateTab(name)
-        local theme = getgenv().PlutoniumSettings.Theme
+        local theme = getgenv().StratusSettings.Theme
+        local config = getgenv().StratusSettings.Config
         
+        -- Tab button
         local tabButton = Create("TextButton", {
             Name = name,
             Text = name,
             TextColor3 = theme.Text,
             TextSize = 14,
-            Font = Enum.Font.Gotham,
+            Font = config.Font,
             BackgroundColor3 = theme.Secondary,
-            Size = UDim2.new(1, -10, 0, 30),
+            Size = UDim2.new(1, -10, 0, 32),
             BorderSizePixel = 0,
             AutoButtonColor = false,
             Children = {
-                Create("UICorner", { CornerRadius = UDim.new(0, 4) }),
+                Create("UICorner", { CornerRadius = UDim.new(0, 6) }),
                 Create("UIStroke", {
                     Color = theme.Outline,
                     Thickness = 1
@@ -245,6 +283,7 @@ function PlutoniumLib:CreateWindow(title)
         
         tabButton.Parent = mainWindow.TabContainer
         
+        -- Tab content
         local tabContent = Create("ScrollingFrame", {
             Name = name,
             BackgroundTransparency = 1,
@@ -256,7 +295,7 @@ function PlutoniumLib:CreateWindow(title)
             Children = {
                 Create("UIListLayout", {
                     SortOrder = Enum.SortOrder.LayoutOrder,
-                    Padding = UDim.new(0, 10)
+                    Padding = UDim.new(0, 12)
                 })
             }
         })
@@ -273,22 +312,42 @@ function PlutoniumLib:CreateWindow(title)
         
         table.insert(window.Tabs, tab)
         
+        -- Switch to this tab if it's the first one
         if #window.Tabs == 1 then
             window:SwitchTab(tab)
         end
         
+        -- Tab button click handler
         tabButton.MouseButton1Click:Connect(function()
             window:SwitchTab(tab)
         end)
         
+        -- Button hover effects
+        tabButton.MouseEnter:Connect(function()
+            TweenService.Create(tabButton, TweenInfo.new(config.AnimationSpeed), {
+                BackgroundColor3 = Color3.new(
+                    theme.Secondary.R * 1.1,
+                    theme.Secondary.G * 1.1,
+                    theme.Secondary.B * 1.1
+                )
+            })
+        end)
+        
+        tabButton.MouseLeave:Connect(function()
+            if window.CurrentTab ~= tab then
+                TweenService.Create(tabButton, TweenInfo.new(config.AnimationSpeed), {
+                    BackgroundColor3 = theme.Secondary
+                })
+            end
+        end)
+        
+        -- Create label element
         function tab:CreateLabel(text)
-            local theme = getgenv().PlutoniumSettings.Theme
-            
             local label = Create("TextLabel", {
                 Text = text,
                 TextColor3 = theme.Text,
                 TextSize = 14,
-                Font = Enum.Font.Gotham,
+                Font = config.Font,
                 BackgroundTransparency = 1,
                 Size = UDim2.new(1, -10, 0, 20),
                 TextXAlignment = Enum.TextXAlignment.Left
@@ -297,25 +356,25 @@ function PlutoniumLib:CreateWindow(title)
             label.Parent = tabContent
             table.insert(tab.Elements, label)
             
+            -- Update canvas size
             tabContent.CanvasSize = UDim2.new(0, 0, 0, tabContent.UIListLayout.AbsoluteContentSize.Y)
             
             return label
         end
         
+        -- Create button element
         function tab:CreateButton(text, callback)
-            local theme = getgenv().PlutoniumSettings.Theme
-            
             local button = Create("TextButton", {
                 Text = text,
                 TextColor3 = theme.Text,
                 TextSize = 14,
-                Font = Enum.Font.Gotham,
+                Font = config.Font,
                 BackgroundColor3 = theme.Secondary,
-                Size = UDim2.new(1, -10, 0, 35),
+                Size = UDim2.new(1, -10, 0, 36),
                 BorderSizePixel = 0,
                 AutoButtonColor = false,
                 Children = {
-                    Create("UICorner", { CornerRadius = UDim.new(0, 4) }),
+                    Create("UICorner", { CornerRadius = UDim.new(0, 6) }),
                     Create("UIStroke", {
                         Color = theme.Outline,
                         Thickness = 1
@@ -326,43 +385,54 @@ function PlutoniumLib:CreateWindow(title)
             button.Parent = tabContent
             table.insert(tab.Elements, button)
             
+            -- Button hover effects
             button.MouseEnter:Connect(function()
-                TweenService.Create(button, TweenInfo.new(0.2), {
-                    BackgroundColor3 = Color3.fromRGB(
-                        theme.Secondary.R * 255 * 1.1,
-                        theme.Secondary.G * 255 * 1.1,
-                        theme.Secondary.B * 255 * 1.1
+                TweenService.Create(button, TweenInfo.new(config.AnimationSpeed), {
+                    BackgroundColor3 = Color3.new(
+                        theme.Secondary.R * 1.1,
+                        theme.Secondary.G * 1.1,
+                        theme.Secondary.B * 1.1
                     )
                 })
             end)
             
             button.MouseLeave:Connect(function()
-                TweenService.Create(button, TweenInfo.new(0.2), {
+                TweenService.Create(button, TweenInfo.new(config.AnimationSpeed), {
                     BackgroundColor3 = theme.Secondary
                 })
             end)
             
+            -- Button click effects
             button.MouseButton1Down:Connect(function()
-                TweenService.Create(button, TweenInfo.new(0.1), {
+                TweenService.Create(button, TweenInfo.new(config.AnimationSpeed/2), {
                     BackgroundColor3 = theme.DarkAccent
                 })
             end)
             
             button.MouseButton1Up:Connect(function()
-                TweenService.Create(button, TweenInfo.new(0.2), {
+                TweenService.Create(button, TweenInfo.new(config.AnimationSpeed), {
                     BackgroundColor3 = theme.Secondary
                 })
-                RippleEffect(button)
+                
+                -- Get relative click position for ripple effect
+                local mouse = game:GetService("UserInputService"):GetMouseLocation()
+                local buttonPos = button.AbsolutePosition
+                local buttonSize = button.AbsoluteSize
+                local relativeX = (mouse.X - buttonPos.X) / buttonSize.X
+                local relativeY = (mouse.Y - buttonPos.Y) / buttonSize.Y
+                
+                RippleEffect(button, UDim2.new(relativeX, 0, relativeY, 0))
                 callback()
             end)
             
+            -- Update canvas size
             tabContent.CanvasSize = UDim2.new(0, 0, 0, tabContent.UIListLayout.AbsoluteContentSize.Y)
             
             return button
         end
         
+        -- Create toggle element
         function tab:CreateToggle(text, default, callback)
-            local theme = getgenv().PlutoniumSettings.Theme
             local toggled = default or false
             
             local toggleFrame = Create("Frame", {
@@ -373,7 +443,7 @@ function PlutoniumLib:CreateWindow(title)
                         Text = text,
                         TextColor3 = theme.Text,
                         TextSize = 14,
-                        Font = Enum.Font.Gotham,
+                        Font = config.Font,
                         BackgroundTransparency = 1,
                         Size = UDim2.new(0.7, 0, 1, 0),
                         TextXAlignment = Enum.TextXAlignment.Left
@@ -414,11 +484,11 @@ function PlutoniumLib:CreateWindow(title)
             local toggleCircle = toggleButton.ToggleCircle
             
             local function updateToggle()
-                TweenService.Create(toggleButton, TweenInfo.new(0.2), {
+                TweenService.Create(toggleButton, TweenInfo.new(config.AnimationSpeed), {
                     BackgroundColor3 = toggled and theme.Accent or theme.Secondary
                 })
                 
-                TweenService.Create(toggleCircle, TweenInfo.new(0.2), {
+                TweenService.Create(toggleCircle, TweenInfo.new(config.AnimationSpeed), {
                     Position = UDim2.new(0, toggled and 27 or 2, 0.5, -10.5)
                 })
                 
@@ -430,6 +500,7 @@ function PlutoniumLib:CreateWindow(title)
                 updateToggle()
             end)
             
+            -- Update canvas size
             tabContent.CanvasSize = UDim2.new(0, 0, 0, tabContent.UIListLayout.AbsoluteContentSize.Y)
             
             local toggle = {
@@ -443,8 +514,8 @@ function PlutoniumLib:CreateWindow(title)
             return toggle
         end
         
+        -- Create slider element
         function tab:CreateSlider(min, max, default, callback)
-            local theme = getgenv().PlutoniumSettings.Theme
             local value = math.clamp(default or min, min, max)
             
             local sliderFrame = Create("Frame", {
@@ -456,7 +527,7 @@ function PlutoniumLib:CreateWindow(title)
                         Text = tostring(value),
                         TextColor3 = theme.Text,
                         TextSize = 14,
-                        Font = Enum.Font.Gotham,
+                        Font = config.Font,
                         BackgroundTransparency = 1,
                         Size = UDim2.new(1, 0, 0, 20),
                         TextXAlignment = Enum.TextXAlignment.Right
@@ -490,7 +561,7 @@ function PlutoniumLib:CreateWindow(title)
                         Text = tostring(min),
                         TextColor3 = Color3.fromRGB(150, 150, 150),
                         TextSize = 12,
-                        Font = Enum.Font.Gotham,
+                        Font = config.Font,
                         BackgroundTransparency = 1,
                         Position = UDim2.new(0, 0, 0, 35),
                         Size = UDim2.new(0, 30, 0, 15),
@@ -501,7 +572,7 @@ function PlutoniumLib:CreateWindow(title)
                         Text = tostring(max),
                         TextColor3 = Color3.fromRGB(150, 150, 150),
                         TextSize = 12,
-                        Font = Enum.Font.Gotham,
+                        Font = config.Font,
                         BackgroundTransparency = 1,
                         Position = UDim2.new(1, -30, 0, 35),
                         Size = UDim2.new(0, 30, 0, 15),
@@ -555,6 +626,7 @@ function PlutoniumLib:CreateWindow(title)
             
             updateSlider(value)
             
+            -- Update canvas size
             tabContent.CanvasSize = UDim2.new(0, 0, 0, tabContent.UIListLayout.AbsoluteContentSize.Y)
             
             local slider = {
@@ -567,8 +639,8 @@ function PlutoniumLib:CreateWindow(title)
             return slider
         end
         
+        -- Create dropdown element
         function tab:CreateDropdown(options, default, callback)
-            local theme = getgenv().PlutoniumSettings.Theme
             local selected = default or options[1]
             local opened = false
             
@@ -581,12 +653,12 @@ function PlutoniumLib:CreateWindow(title)
                         Text = selected,
                         TextColor3 = theme.Text,
                         TextSize = 14,
-                        Font = Enum.Font.Gotham,
+                        Font = config.Font,
                         BackgroundColor3 = theme.Secondary,
                         Size = UDim2.new(1, 0, 0, 30),
                         AutoButtonColor = false,
                         Children = {
-                            Create("UICorner", { CornerRadius = UDim.new(0, 4) }),
+                            Create("UICorner", { CornerRadius = UDim.new(0, 6) }),
                             Create("UIStroke", {
                                 Color = theme.Outline,
                                 Thickness = 1
@@ -612,7 +684,7 @@ function PlutoniumLib:CreateWindow(title)
                         ClipsDescendants = true,
                         Visible = false,
                         Children = {
-                            Create("UICorner", { CornerRadius = UDim.new(0, 4) }),
+                            Create("UICorner", { CornerRadius = UDim.new(0, 6) }),
                             Create("UIStroke", {
                                 Color = theme.Outline,
                                 Thickness = 1
@@ -640,11 +712,11 @@ function PlutoniumLib:CreateWindow(title)
                 opened = not opened
                 dropdownList.Visible = opened
                 
-                TweenService.Create(dropdownIcon, TweenInfo.new(0.2), {
+                TweenService.Create(dropdownIcon, TweenInfo.new(config.AnimationSpeed), {
                     Rotation = opened and 0 or 180
                 })
                 
-                TweenService.Create(dropdownList, TweenInfo.new(0.2), {
+                TweenService.Create(dropdownList, TweenInfo.new(config.AnimationSpeed), {
                     Size = UDim2.new(1, 0, 0, opened and (math.min(#options, 5) * 30 + 10) or 0)
                 })
             end
@@ -656,27 +728,32 @@ function PlutoniumLib:CreateWindow(title)
                     Text = option,
                     TextColor3 = theme.Text,
                     TextSize = 14,
-                    Font = Enum.Font.Gotham,
+                    Font = config.Font,
                     BackgroundColor3 = theme.Secondary,
                     BackgroundTransparency = 1,
                     Size = UDim2.new(1, -10, 0, 30),
-                    AutoButtonColor = false
+                    AutoButtonColor = false,
+                    Children = {
+                        Create("UICorner", { CornerRadius = UDim.new(0, 4) })
+                    }
                 })
                 
                 optionButton.Parent = dropdownList
                 
+                -- Option hover effects
                 optionButton.MouseEnter:Connect(function()
-                    TweenService.Create(optionButton, TweenInfo.new(0.2), {
+                    TweenService.Create(optionButton, TweenInfo.new(config.AnimationSpeed), {
                         BackgroundTransparency = 0.9
                     })
                 end)
                 
                 optionButton.MouseLeave:Connect(function()
-                    TweenService.Create(optionButton, TweenInfo.new(0.2), {
+                    TweenService.Create(optionButton, TweenInfo.new(config.AnimationSpeed), {
                         BackgroundTransparency = 1
                     })
                 end)
                 
+                -- Option selection
                 optionButton.MouseButton1Click:Connect(function()
                     selected = option
                     dropdownButton.Text = selected
@@ -685,6 +762,7 @@ function PlutoniumLib:CreateWindow(title)
                 end)
             end
             
+            -- Update canvas size
             tabContent.CanvasSize = UDim2.new(0, 0, 0, tabContent.UIListLayout.AbsoluteContentSize.Y)
             
             local dropdown = {
@@ -701,9 +779,8 @@ function PlutoniumLib:CreateWindow(title)
             return dropdown
         end
         
+        -- Create textbox element
         function tab:CreateTextbox(placeholder, callback)
-            local theme = getgenv().PlutoniumSettings.Theme
-            
             local textboxFrame = Create("Frame", {
                 BackgroundTransparency = 1,
                 Size = UDim2.new(1, -10, 0, 40),
@@ -714,12 +791,12 @@ function PlutoniumLib:CreateWindow(title)
                         TextColor3 = theme.Text,
                         PlaceholderColor3 = Color3.fromRGB(150, 150, 150),
                         TextSize = 14,
-                        Font = Enum.Font.Gotham,
+                        Font = config.Font,
                         BackgroundColor3 = theme.Secondary,
                         Size = UDim2.new(1, 0, 0, 35),
                         BorderSizePixel = 0,
                         Children = {
-                            Create("UICorner", { CornerRadius = UDim.new(0, 4) }),
+                            Create("UICorner", { CornerRadius = UDim.new(0, 6) }),
                             Create("UIStroke", {
                                 Color = theme.Outline,
                                 Thickness = 1
@@ -738,20 +815,36 @@ function PlutoniumLib:CreateWindow(title)
             
             local textbox = textboxFrame.TextBox
             
-            textbox.FocusLost:Connect(function(enterPressed)
-                if enterPressed then
+            -- Textbox focus effects
+            textbox.Focused:Connect(function()
+                TweenService.Create(textbox, TweenInfo.new(config.AnimationSpeed), {
+                    BackgroundColor3 = Color3.new(
+                        theme.Secondary.R * 1.1,
+                        theme.Secondary.G * 1.1,
+                        theme.Secondary.B * 1.1
+                    )
+                })
+            end)
+            
+            textbox.FocusLost:Connect(function()
+                TweenService.Create(textbox, TweenInfo.new(config.AnimationSpeed), {
+                    BackgroundColor3 = theme.Secondary
+                })
+                
+                if textbox.Text ~= "" then
                     callback(textbox.Text)
                 end
             end)
             
+            -- Update canvas size
             tabContent.CanvasSize = UDim2.new(0, 0, 0, tabContent.UIListLayout.AbsoluteContentSize.Y)
             
             return textbox
         end
         
-        function tab:CreateKeybind(name, default, callback)
-            local theme = getgenv().PlutoniumSettings.Theme
-            local key = default or Enum.KeyCode.Unknown
+        -- Create keybind element
+        function tab:CreateKeybind(name, defaultKey, callback)
+            local key = defaultKey or Enum.KeyCode.Unknown
             local listening = false
             
             local keybindFrame = Create("Frame", {
@@ -762,7 +855,7 @@ function PlutoniumLib:CreateWindow(title)
                         Text = name,
                         TextColor3 = theme.Text,
                         TextSize = 14,
-                        Font = Enum.Font.Gotham,
+                        Font = config.Font,
                         BackgroundTransparency = 1,
                         Size = UDim2.new(0.6, 0, 1, 0),
                         TextXAlignment = Enum.TextXAlignment.Left
@@ -772,13 +865,13 @@ function PlutoniumLib:CreateWindow(title)
                         Text = key.Name,
                         TextColor3 = theme.Text,
                         TextSize = 14,
-                        Font = Enum.Font.Gotham,
+                        Font = config.Font,
                         BackgroundColor3 = theme.Secondary,
                         Size = UDim2.new(0.4, 0, 0, 30),
                         Position = UDim2.new(0.6, 0, 0, 0),
                         AutoButtonColor = false,
                         Children = {
-                            Create("UICorner", { CornerRadius = UDim.new(0, 4) }),
+                            Create("UICorner", { CornerRadius = UDim.new(0, 6) }),
                             Create("UIStroke", {
                                 Color = theme.Outline,
                                 Thickness = 1
@@ -813,6 +906,7 @@ function PlutoniumLib:CreateWindow(title)
                 end)
             end)
             
+            -- Update canvas size
             tabContent.CanvasSize = UDim2.new(0, 0, 0, tabContent.UIListLayout.AbsoluteContentSize.Y)
             
             local keybind = {
@@ -825,9 +919,9 @@ function PlutoniumLib:CreateWindow(title)
             return keybind
         end
         
-        function tab:CreateColorPicker(name, default, callback)
-            local theme = getgenv().PlutoniumSettings.Theme
-            local color = default or Color3.new(1, 1, 1)
+        -- Create color picker element
+        function tab:CreateColorPicker(name, defaultColor, callback)
+            local color = defaultColor or Color3.new(1, 1, 1)
             local opened = false
             
             local colorPickerFrame = Create("Frame", {
@@ -838,7 +932,7 @@ function PlutoniumLib:CreateWindow(title)
                         Text = name,
                         TextColor3 = theme.Text,
                         TextSize = 14,
-                        Font = Enum.Font.Gotham,
+                        Font = config.Font,
                         BackgroundTransparency = 1,
                         Size = UDim2.new(0.6, 0, 1, 0),
                         TextXAlignment = Enum.TextXAlignment.Left
@@ -850,7 +944,7 @@ function PlutoniumLib:CreateWindow(title)
                         Size = UDim2.new(0.4, 0, 0, 30),
                         AutoButtonColor = false,
                         Children = {
-                            Create("UICorner", { CornerRadius = UDim.new(0, 4) }),
+                            Create("UICorner", { CornerRadius = UDim.new(0, 6) }),
                             Create("UIStroke", {
                                 Color = theme.Outline,
                                 Thickness = 1
@@ -865,7 +959,7 @@ function PlutoniumLib:CreateWindow(title)
                         Visible = false,
                         ClipsDescendants = true,
                         Children = {
-                            Create("UICorner", { CornerRadius = UDim.new(0, 4) }),
+                            Create("UICorner", { CornerRadius = UDim.new(0, 6) }),
                             Create("UIStroke", {
                                 Color = theme.Outline,
                                 Thickness = 1
@@ -914,7 +1008,7 @@ function PlutoniumLib:CreateWindow(title)
                                 Text = "Confirm",
                                 TextColor3 = theme.Text,
                                 TextSize = 14,
-                                Font = Enum.Font.Gotham,
+                                Font = config.Font,
                                 BackgroundColor3 = theme.Accent,
                                 Size = UDim2.new(0, 80, 0, 25),
                                 Position = UDim2.new(1, -85, 0, 165),
@@ -945,7 +1039,7 @@ function PlutoniumLib:CreateWindow(title)
                 opened = not opened
                 colorPicker.Visible = opened
                 
-                TweenService.Create(colorPicker, TweenInfo.new(0.2), {
+                TweenService.Create(colorPicker, TweenInfo.new(config.AnimationSpeed), {
                     Size = UDim2.new(0, 200, 0, opened and 190 or 0)
                 })
             end
@@ -1016,6 +1110,7 @@ function PlutoniumLib:CreateWindow(title)
                 togglePicker()
             end)
             
+            -- Update canvas size
             tabContent.CanvasSize = UDim2.new(0, 0, 0, tabContent.UIListLayout.AbsoluteContentSize.Y)
             
             local picker = {
@@ -1030,28 +1125,44 @@ function PlutoniumLib:CreateWindow(title)
             
             return picker
         end
-            
+        
         return tab
     end
     
+    -- Switch between tabs
     function window:SwitchTab(tab)
         if self.CurrentTab then
             self.CurrentTab.TabContent.Visible = false
-            TweenService.Create(self.CurrentTab.TabButton, TweenInfo.new(0.2), {
-                BackgroundColor3 = getgenv().PlutoniumSettings.Theme.Secondary
+            TweenService.Create(self.CurrentTab.TabButton, TweenInfo.new(config.AnimationSpeed), {
+                BackgroundColor3 = theme.Secondary
             })
         end
         
         self.CurrentTab = tab
         tab.TabContent.Visible = true
-        TweenService.Create(tab.TabButton, TweenInfo.new(0.2), {
-            BackgroundColor3 = getgenv().PlutoniumSettings.Theme.Accent
+        TweenService.Create(tab.TabButton, TweenInfo.new(config.AnimationSpeed), {
+            BackgroundColor3 = theme.Accent
         })
     end
     
-    function window:Notification(title, text, duration)
-        local theme = getgenv().PlutoniumSettings.Theme
+    -- Create notification
+    function window:Notification(title, text, duration, notificationType)
         duration = duration or 5
+        notificationType = notificationType or "Info"
+        
+        local theme = getgenv().StratusSettings.Theme
+        local config = getgenv().StratusSettings.Config
+        
+        local accentColor
+        if notificationType == "Success" then
+            accentColor = theme.Success
+        elseif notificationType == "Warning" then
+            accentColor = theme.Warning
+        elseif notificationType == "Error" then
+            accentColor = theme.Error
+        else
+            accentColor = theme.Accent
+        end
         
         local notification = Create("Frame", {
             Name = "Notification",
@@ -1061,14 +1172,15 @@ function PlutoniumLib:CreateWindow(title)
             AnchorPoint = Vector2.new(1, 1),
             ClipsDescendants = true,
             Children = {
-                Create("UICorner", { CornerRadius = UDim.new(0, 6) }),
+                Create("UICorner", { CornerRadius = UDim.new(0, 8) }),
                 Create("UIStroke", {
                     Color = theme.Outline,
-                    Thickness = 1
+                    Thickness = 1,
+                    Transparency = 0.5
                 }),
                 Create("Frame", {
                     Name = "TopBar",
-                    BackgroundColor3 = theme.Accent,
+                    BackgroundColor3 = accentColor,
                     Size = UDim2.new(1, 0, 0, 5),
                     BorderSizePixel = 0
                 }),
@@ -1077,7 +1189,7 @@ function PlutoniumLib:CreateWindow(title)
                     Text = title,
                     TextColor3 = theme.Text,
                     TextSize = 16,
-                    Font = Enum.Font.GothamBold,
+                    Font = config.FontBold,
                     BackgroundTransparency = 1,
                     Position = UDim2.new(0, 15, 0, 10),
                     Size = UDim2.new(1, -30, 0, 20),
@@ -1088,7 +1200,7 @@ function PlutoniumLib:CreateWindow(title)
                     Text = text,
                     TextColor3 = Color3.fromRGB(200, 200, 200),
                     TextSize = 14,
-                    Font = Enum.Font.Gotham,
+                    Font = config.Font,
                     BackgroundTransparency = 1,
                     Position = UDim2.new(0, 15, 0, 35),
                     Size = UDim2.new(1, -30, 0, 0),
@@ -1097,7 +1209,7 @@ function PlutoniumLib:CreateWindow(title)
                 }),
                 Create("Frame", {
                     Name = "ProgressBar",
-                    BackgroundColor3 = theme.Accent,
+                    BackgroundColor3 = accentColor,
                     Size = UDim2.new(1, 0, 0, 2),
                     Position = UDim2.new(0, 0, 1, -2),
                     AnchorPoint = Vector2.new(0, 1),
@@ -1136,28 +1248,28 @@ function PlutoniumLib:CreateWindow(title)
     return window
 end
 
-getgenv().PlutoniumLib = PlutoniumLib
+getgenv().Stratus = Stratus
 
 -- Example usage:
 --[[
-loadstring(game:HttpGet("https://raw.githubusercontent.com/username/repo/main/PlutoniumLib.lua"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/username/repo/main/Stratus.lua"))()
 
-local plutonium = PlutoniumLib:CreateWindow("Plutonium Hub")
+local stratus = Stratus:CreateWindow("Stratus Hub")
 
-local credits = plutonium:CreateTab("Credits")
-credits:CreateLabel("UI by Plutonium")
-credits:CreateLabel("Script by Joey")
+local credits = stratus:CreateTab("Credits")
+credits:CreateLabel("UI Library: Stratus")
+credits:CreateLabel("Created by Joey")
 
-local main = plutonium:CreateTab("Main")
+local main = stratus:CreateTab("Main")
 local walkspeed = 16
 
 main:CreateToggle("Speed Toggle", false, function(state)
     game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = state and walkspeed or 16
 end)
 
-main:CreateSlider(16, 100, 16, function(val)
-    walkspeed = val
+main:CreateSlider(16, 100, 16, function(value)
+    walkspeed = value
 end)
 
-plutonium:Notification("Welcome", "Thank you for using Plutonium Lib!", 5)
+stratus:Notification("Welcome", "Thank you for using Stratus!", 5, "Success")
 ]]
