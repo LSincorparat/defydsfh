@@ -1,0 +1,1163 @@
+-- Plutonium Lib v1.0
+-- A modern Roblox exploit GUI library with dark theme and neon orange accents
+-- Designed for Synapse, Fluxus, and other executor environments
+
+if not getgenv().PlutoniumSettings then
+    getgenv().PlutoniumSettings = {
+        Theme = {
+            Main = Color3.fromRGB(20, 20, 25),
+            Secondary = Color3.fromRGB(30, 30, 35),
+            Text = Color3.fromRGB(240, 240, 240),
+            Accent = Color3.fromRGB(255, 100, 0),
+            DarkAccent = Color3.fromRGB(200, 80, 0),
+            Outline = Color3.fromRGB(50, 50, 55),
+            Notification = Color3.fromRGB(25, 25, 30)
+        },
+        Config = {}
+    }
+end
+
+local PlutoniumLib = {}
+PlutoniumLib.__index = PlutoniumLib
+
+local TweenService = {
+    Create = function(instance, info, props)
+        if game:GetService("TweenService") then
+            local tween = game:GetService("TweenService"):Create(instance, info, props)
+            tween:Play()
+            return tween
+        else
+            -- Fallback for executors without TweenService
+            for prop, value in pairs(props) do
+                instance[prop] = value
+            end
+            return { Play = function() end }
+        end
+    end
+}
+
+local function Create(class, props)
+    local instance = Instance.new(class)
+    for prop, value in pairs(props) do
+        if prop == "Children" then
+            for _, child in ipairs(value) do
+                child.Parent = instance
+            end
+        else
+            instance[prop] = value
+        end
+    end
+    return instance
+end
+
+local function RippleEffect(button)
+    local ripple = Create("Frame", {
+        Name = "Ripple",
+        BackgroundColor3 = Color3.new(1, 1, 1),
+        BackgroundTransparency = 0.8,
+        Size = UDim2.new(0, 0, 0, 0),
+        Position = UDim2.new(0.5, 0, 0.5, 0),
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        ZIndex = 10
+    })
+    
+    ripple.Parent = button
+    TweenService.Create(ripple, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        Size = UDim2.new(2, 0, 2, 0),
+        BackgroundTransparency = 1
+    })
+    
+    spawn(function()
+        wait(0.5)
+        ripple:Destroy()
+    end)
+end
+
+function PlutoniumLib:SetTheme(themeTable)
+    for k, v in pairs(themeTable) do
+        if getgenv().PlutoniumSettings.Theme[k] then
+            getgenv().PlutoniumSettings.Theme[k] = v
+        end
+    end
+end
+
+function PlutoniumLib:CreateWindow(title)
+    local screenGui = Create("ScreenGui", {
+        Name = "PlutoniumLib",
+        ResetOnSpawn = false
+    })
+    
+    if gethui then
+        screenGui.Parent = gethui()
+    elseif syn and syn.protect_gui then
+        syn.protect_gui(screenGui)
+        screenGui.Parent = game:GetService("CoreGui")
+    else
+        screenGui.Parent = game:GetService("CoreGui")
+    end
+    
+    local theme = getgenv().PlutoniumSettings.Theme
+    
+    local mainWindow = Create("Frame", {
+        Name = "MainWindow",
+        Size = UDim2.new(0, 500, 0, 400),
+        Position = UDim2.new(0.5, -250, 0.5, -200),
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        BackgroundColor3 = theme.Main,
+        BorderSizePixel = 0,
+        ClipsDescendants = true,
+        Children = {
+            Create("UICorner", { CornerRadius = UDim.new(0, 6) }),
+            Create("TextLabel", {
+                Name = "Title",
+                Text = title,
+                TextColor3 = theme.Text,
+                TextSize = 18,
+                Font = Enum.Font.GothamBold,
+                BackgroundTransparency = 1,
+                Position = UDim2.new(0, 15, 0, 10),
+                Size = UDim2.new(0, 200, 0, 20),
+                TextXAlignment = Enum.TextXAlignment.Left
+            }),
+            Create("Frame", {
+                Name = "TopBar",
+                Size = UDim2.new(1, 0, 0, 40),
+                BackgroundColor3 = theme.Secondary,
+                BorderSizePixel = 0,
+                Children = {
+                    Create("UICorner", { CornerRadius = UDim.new(0, 6) }),
+                    Create("UIStroke", {
+                        Color = theme.Outline,
+                        Thickness = 1
+                    })
+                }
+            }),
+            Create("Frame", {
+                Name = "TabContainer",
+                Position = UDim2.new(0, 10, 0, 50),
+                Size = UDim2.new(0, 120, 1, -60),
+                BackgroundTransparency = 1,
+                Children = {
+                    Create("UIListLayout", {
+                        SortOrder = Enum.SortOrder.LayoutOrder,
+                        Padding = UDim.new(0, 5)
+                    })
+                }
+            }),
+            Create("Frame", {
+                Name = "ContentContainer",
+                Position = UDim2.new(0, 140, 0, 50),
+                Size = UDim2.new(1, -150, 1, -60),
+                BackgroundTransparency = 1,
+                Children = {
+                    Create("UIListLayout", {
+                        SortOrder = Enum.SortOrder.LayoutOrder,
+                        Padding = UDim.new(0, 10)
+                    }),
+                    Create("UIPadding", {
+                        PaddingTop = UDim.new(0, 5),
+                        PaddingLeft = UDim.new(0, 5)
+                    })
+                }
+            }),
+            Create("TextLabel", {
+                Name = "Watermark",
+                Text = "Plutonium Lib v1.0",
+                TextColor3 = Color3.fromRGB(150, 150, 150),
+                TextSize = 12,
+                Font = Enum.Font.Gotham,
+                BackgroundTransparency = 1,
+                Position = UDim2.new(1, -100, 1, -20),
+                Size = UDim2.new(0, 90, 0, 15),
+                TextXAlignment = Enum.TextXAlignment.Right
+            })
+        }
+    })
+    
+    mainWindow.Parent = screenGui
+    
+    -- Draggable functionality
+    local dragging
+    local dragInput
+    local dragStart
+    local startPos
+    
+    local function update(input)
+        local delta = input.Position - dragStart
+        mainWindow.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+    
+    mainWindow.TopBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = mainWindow.Position
+            
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+    
+    mainWindow.TopBar.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+    
+    game:GetService("UserInputService").InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            update(input)
+        end
+    end)
+    
+    local window = {
+        ScreenGui = screenGui,
+        Tabs = {},
+        CurrentTab = nil
+    }
+    
+    setmetatable(window, PlutoniumLib)
+    
+    function window:CreateTab(name)
+        local theme = getgenv().PlutoniumSettings.Theme
+        
+        local tabButton = Create("TextButton", {
+            Name = name,
+            Text = name,
+            TextColor3 = theme.Text,
+            TextSize = 14,
+            Font = Enum.Font.Gotham,
+            BackgroundColor3 = theme.Secondary,
+            Size = UDim2.new(1, -10, 0, 30),
+            BorderSizePixel = 0,
+            AutoButtonColor = false,
+            Children = {
+                Create("UICorner", { CornerRadius = UDim.new(0, 4) }),
+                Create("UIStroke", {
+                    Color = theme.Outline,
+                    Thickness = 1
+                })
+            }
+        })
+        
+        tabButton.Parent = mainWindow.TabContainer
+        
+        local tabContent = Create("ScrollingFrame", {
+            Name = name,
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 1, 0),
+            ScrollBarThickness = 3,
+            ScrollBarImageColor3 = theme.Accent,
+            CanvasSize = UDim2.new(0, 0, 0, 0),
+            Visible = false,
+            Children = {
+                Create("UIListLayout", {
+                    SortOrder = Enum.SortOrder.LayoutOrder,
+                    Padding = UDim.new(0, 10)
+                })
+            }
+        })
+        
+        tabContent.Parent = mainWindow.ContentContainer
+        
+        local tab = {
+            Name = name,
+            TabButton = tabButton,
+            TabContent = tabContent,
+            Elements = {},
+            Parent = window
+        }
+        
+        table.insert(window.Tabs, tab)
+        
+        if #window.Tabs == 1 then
+            window:SwitchTab(tab)
+        end
+        
+        tabButton.MouseButton1Click:Connect(function()
+            window:SwitchTab(tab)
+        end)
+        
+        function tab:CreateLabel(text)
+            local theme = getgenv().PlutoniumSettings.Theme
+            
+            local label = Create("TextLabel", {
+                Text = text,
+                TextColor3 = theme.Text,
+                TextSize = 14,
+                Font = Enum.Font.Gotham,
+                BackgroundTransparency = 1,
+                Size = UDim2.new(1, -10, 0, 20),
+                TextXAlignment = Enum.TextXAlignment.Left
+            })
+            
+            label.Parent = tabContent
+            table.insert(tab.Elements, label)
+            
+            tabContent.CanvasSize = UDim2.new(0, 0, 0, tabContent.UIListLayout.AbsoluteContentSize.Y)
+            
+            return label
+        end
+        
+        function tab:CreateButton(text, callback)
+            local theme = getgenv().PlutoniumSettings.Theme
+            
+            local button = Create("TextButton", {
+                Text = text,
+                TextColor3 = theme.Text,
+                TextSize = 14,
+                Font = Enum.Font.Gotham,
+                BackgroundColor3 = theme.Secondary,
+                Size = UDim2.new(1, -10, 0, 35),
+                BorderSizePixel = 0,
+                AutoButtonColor = false,
+                Children = {
+                    Create("UICorner", { CornerRadius = UDim.new(0, 4) }),
+                    Create("UIStroke", {
+                        Color = theme.Outline,
+                        Thickness = 1
+                    })
+                }
+            })
+            
+            button.Parent = tabContent
+            table.insert(tab.Elements, button)
+            
+            button.MouseEnter:Connect(function()
+                TweenService.Create(button, TweenInfo.new(0.2), {
+                    BackgroundColor3 = Color3.fromRGB(
+                        theme.Secondary.R * 255 * 1.1,
+                        theme.Secondary.G * 255 * 1.1,
+                        theme.Secondary.B * 255 * 1.1
+                    )
+                })
+            end)
+            
+            button.MouseLeave:Connect(function()
+                TweenService.Create(button, TweenInfo.new(0.2), {
+                    BackgroundColor3 = theme.Secondary
+                })
+            end)
+            
+            button.MouseButton1Down:Connect(function()
+                TweenService.Create(button, TweenInfo.new(0.1), {
+                    BackgroundColor3 = theme.DarkAccent
+                })
+            end)
+            
+            button.MouseButton1Up:Connect(function()
+                TweenService.Create(button, TweenInfo.new(0.2), {
+                    BackgroundColor3 = theme.Secondary
+                })
+                RippleEffect(button)
+                callback()
+            end)
+            
+            tabContent.CanvasSize = UDim2.new(0, 0, 0, tabContent.UIListLayout.AbsoluteContentSize.Y)
+            
+            return button
+        end
+        
+        function tab:CreateToggle(text, default, callback)
+            local theme = getgenv().PlutoniumSettings.Theme
+            local toggled = default or false
+            
+            local toggleFrame = Create("Frame", {
+                BackgroundTransparency = 1,
+                Size = UDim2.new(1, -10, 0, 30),
+                Children = {
+                    Create("TextLabel", {
+                        Text = text,
+                        TextColor3 = theme.Text,
+                        TextSize = 14,
+                        Font = Enum.Font.Gotham,
+                        BackgroundTransparency = 1,
+                        Size = UDim2.new(0.7, 0, 1, 0),
+                        TextXAlignment = Enum.TextXAlignment.Left
+                    }),
+                    Create("TextButton", {
+                        Name = "ToggleButton",
+                        Text = "",
+                        BackgroundColor3 = toggled and theme.Accent or theme.Secondary,
+                        Size = UDim2.new(0, 50, 0, 25),
+                        Position = UDim2.new(1, -50, 0.5, -12.5),
+                        AnchorPoint = Vector2.new(1, 0.5),
+                        AutoButtonColor = false,
+                        Children = {
+                            Create("UICorner", { CornerRadius = UDim.new(1, 0) }),
+                            Create("Frame", {
+                                Name = "ToggleCircle",
+                                BackgroundColor3 = Color3.new(1, 1, 1),
+                                Size = UDim2.new(0, 21, 0, 21),
+                                Position = UDim2.new(0, toggled and 27 or 2, 0.5, -10.5),
+                                AnchorPoint = Vector2.new(0, 0.5),
+                                Children = {
+                                    Create("UICorner", { CornerRadius = UDim.new(1, 0) })
+                                }
+                            }),
+                            Create("UIStroke", {
+                                Color = theme.Outline,
+                                Thickness = 1
+                            })
+                        }
+                    })
+                }
+            })
+            
+            toggleFrame.Parent = tabContent
+            table.insert(tab.Elements, toggleFrame)
+            
+            local toggleButton = toggleFrame.ToggleButton
+            local toggleCircle = toggleButton.ToggleCircle
+            
+            local function updateToggle()
+                TweenService.Create(toggleButton, TweenInfo.new(0.2), {
+                    BackgroundColor3 = toggled and theme.Accent or theme.Secondary
+                })
+                
+                TweenService.Create(toggleCircle, TweenInfo.new(0.2), {
+                    Position = UDim2.new(0, toggled and 27 or 2, 0.5, -10.5)
+                })
+                
+                callback(toggled)
+            end
+            
+            toggleButton.MouseButton1Click:Connect(function()
+                toggled = not toggled
+                updateToggle()
+            end)
+            
+            tabContent.CanvasSize = UDim2.new(0, 0, 0, tabContent.UIListLayout.AbsoluteContentSize.Y)
+            
+            local toggle = {
+                Value = toggled,
+                Set = function(self, value)
+                    toggled = value
+                    updateToggle()
+                end
+            }
+            
+            return toggle
+        end
+        
+        function tab:CreateSlider(min, max, default, callback)
+            local theme = getgenv().PlutoniumSettings.Theme
+            local value = math.clamp(default or min, min, max)
+            
+            local sliderFrame = Create("Frame", {
+                BackgroundTransparency = 1,
+                Size = UDim2.new(1, -10, 0, 50),
+                Children = {
+                    Create("TextLabel", {
+                        Name = "SliderText",
+                        Text = tostring(value),
+                        TextColor3 = theme.Text,
+                        TextSize = 14,
+                        Font = Enum.Font.Gotham,
+                        BackgroundTransparency = 1,
+                        Size = UDim2.new(1, 0, 0, 20),
+                        TextXAlignment = Enum.TextXAlignment.Right
+                    }),
+                    Create("Frame", {
+                        Name = "SliderTrack",
+                        BackgroundColor3 = theme.Secondary,
+                        Size = UDim2.new(1, 0, 0, 5),
+                        Position = UDim2.new(0, 0, 0, 25),
+                        Children = {
+                            Create("UICorner", { CornerRadius = UDim.new(1, 0) }),
+                            Create("Frame", {
+                                Name = "SliderFill",
+                                BackgroundColor3 = theme.Accent,
+                                Size = UDim2.new((value - min) / (max - min), 0, 1, 0),
+                                Children = {
+                                    Create("UICorner", { CornerRadius = UDim.new(1, 0) })
+                                }
+                            }),
+                            Create("TextButton", {
+                                Name = "SliderButton",
+                                BackgroundTransparency = 1,
+                                Size = UDim2.new(1, 0, 3, 0),
+                                Position = UDim2.new(0, 0, 0, -5),
+                                Text = ""
+                            })
+                        }
+                    }),
+                    Create("TextLabel", {
+                        Name = "MinText",
+                        Text = tostring(min),
+                        TextColor3 = Color3.fromRGB(150, 150, 150),
+                        TextSize = 12,
+                        Font = Enum.Font.Gotham,
+                        BackgroundTransparency = 1,
+                        Position = UDim2.new(0, 0, 0, 35),
+                        Size = UDim2.new(0, 30, 0, 15),
+                        TextXAlignment = Enum.TextXAlignment.Left
+                    }),
+                    Create("TextLabel", {
+                        Name = "MaxText",
+                        Text = tostring(max),
+                        TextColor3 = Color3.fromRGB(150, 150, 150),
+                        TextSize = 12,
+                        Font = Enum.Font.Gotham,
+                        BackgroundTransparency = 1,
+                        Position = UDim2.new(1, -30, 0, 35),
+                        Size = UDim2.new(0, 30, 0, 15),
+                        TextXAlignment = Enum.TextXAlignment.Right
+                    })
+                }
+            })
+            
+            sliderFrame.Parent = tabContent
+            table.insert(tab.Elements, sliderFrame)
+            
+            local sliderText = sliderFrame.SliderText
+            local sliderTrack = sliderFrame.SliderTrack
+            local sliderFill = sliderTrack.SliderFill
+            local sliderButton = sliderTrack.SliderButton
+            
+            local function updateSlider(newValue)
+                value = math.clamp(newValue, min, max)
+                sliderText.Text = tostring(math.floor(value * 100) / 100)
+                sliderFill.Size = UDim2.new((value - min) / (max - min), 0, 1, 0)
+                callback(value)
+            end
+            
+            local sliding = false
+            
+            sliderButton.MouseButton1Down:Connect(function()
+                sliding = true
+                
+                local connection
+                connection = game:GetService("UserInputService").InputChanged:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseMovement and sliding then
+                        local mousePos = game:GetService("UserInputService"):GetMouseLocation()
+                        local sliderPos = sliderTrack.AbsolutePosition
+                        local sliderSize = sliderTrack.AbsoluteSize
+                        
+                        local relativeX = (mousePos.X - sliderPos.X) / sliderSize.X
+                        relativeX = math.clamp(relativeX, 0, 1)
+                        
+                        local newValue = min + (max - min) * relativeX
+                        updateSlider(newValue)
+                    end
+                end)
+                
+                game:GetService("UserInputService").InputEnded:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                        sliding = false
+                        connection:Disconnect()
+                    end
+                end)
+            end)
+            
+            updateSlider(value)
+            
+            tabContent.CanvasSize = UDim2.new(0, 0, 0, tabContent.UIListLayout.AbsoluteContentSize.Y)
+            
+            local slider = {
+                Value = value,
+                Set = function(self, newValue)
+                    updateSlider(newValue)
+                end
+            }
+            
+            return slider
+        end
+        
+        function tab:CreateDropdown(options, default, callback)
+            local theme = getgenv().PlutoniumSettings.Theme
+            local selected = default or options[1]
+            local opened = false
+            
+            local dropdownFrame = Create("Frame", {
+                BackgroundTransparency = 1,
+                Size = UDim2.new(1, -10, 0, 30),
+                Children = {
+                    Create("TextButton", {
+                        Name = "DropdownButton",
+                        Text = selected,
+                        TextColor3 = theme.Text,
+                        TextSize = 14,
+                        Font = Enum.Font.Gotham,
+                        BackgroundColor3 = theme.Secondary,
+                        Size = UDim2.new(1, 0, 0, 30),
+                        AutoButtonColor = false,
+                        Children = {
+                            Create("UICorner", { CornerRadius = UDim.new(0, 4) }),
+                            Create("UIStroke", {
+                                Color = theme.Outline,
+                                Thickness = 1
+                            }),
+                            Create("ImageLabel", {
+                                Name = "DropdownIcon",
+                                Image = "rbxassetid://3926305904",
+                                ImageRectOffset = Vector2.new(564, 284),
+                                ImageRectSize = Vector2.new(36, 36),
+                                BackgroundTransparency = 1,
+                                Size = UDim2.new(0, 20, 0, 20),
+                                Position = UDim2.new(1, -25, 0.5, -10),
+                                AnchorPoint = Vector2.new(1, 0.5),
+                                Rotation = 180
+                            })
+                        }
+                    }),
+                    Create("Frame", {
+                        Name = "DropdownList",
+                        BackgroundColor3 = theme.Secondary,
+                        Size = UDim2.new(1, 0, 0, 0),
+                        Position = UDim2.new(0, 0, 0, 35),
+                        ClipsDescendants = true,
+                        Visible = false,
+                        Children = {
+                            Create("UICorner", { CornerRadius = UDim.new(0, 4) }),
+                            Create("UIStroke", {
+                                Color = theme.Outline,
+                                Thickness = 1
+                            }),
+                            Create("UIListLayout", {
+                                SortOrder = Enum.SortOrder.LayoutOrder
+                            }),
+                            Create("UIPadding", {
+                                PaddingTop = UDim.new(0, 5),
+                                PaddingBottom = UDim.new(0, 5)
+                            })
+                        }
+                    })
+                }
+            })
+            
+            dropdownFrame.Parent = tabContent
+            table.insert(tab.Elements, dropdownFrame)
+            
+            local dropdownButton = dropdownFrame.DropdownButton
+            local dropdownIcon = dropdownButton.DropdownIcon
+            local dropdownList = dropdownFrame.DropdownList
+            
+            local function toggleDropdown()
+                opened = not opened
+                dropdownList.Visible = opened
+                
+                TweenService.Create(dropdownIcon, TweenInfo.new(0.2), {
+                    Rotation = opened and 0 or 180
+                })
+                
+                TweenService.Create(dropdownList, TweenInfo.new(0.2), {
+                    Size = UDim2.new(1, 0, 0, opened and (math.min(#options, 5) * 30 + 10) or 0)
+                })
+            end
+            
+            dropdownButton.MouseButton1Click:Connect(toggleDropdown)
+            
+            for _, option in ipairs(options) do
+                local optionButton = Create("TextButton", {
+                    Text = option,
+                    TextColor3 = theme.Text,
+                    TextSize = 14,
+                    Font = Enum.Font.Gotham,
+                    BackgroundColor3 = theme.Secondary,
+                    BackgroundTransparency = 1,
+                    Size = UDim2.new(1, -10, 0, 30),
+                    AutoButtonColor = false
+                })
+                
+                optionButton.Parent = dropdownList
+                
+                optionButton.MouseEnter:Connect(function()
+                    TweenService.Create(optionButton, TweenInfo.new(0.2), {
+                        BackgroundTransparency = 0.9
+                    })
+                end)
+                
+                optionButton.MouseLeave:Connect(function()
+                    TweenService.Create(optionButton, TweenInfo.new(0.2), {
+                        BackgroundTransparency = 1
+                    })
+                end)
+                
+                optionButton.MouseButton1Click:Connect(function()
+                    selected = option
+                    dropdownButton.Text = selected
+                    toggleDropdown()
+                    callback(selected)
+                end)
+            end
+            
+            tabContent.CanvasSize = UDim2.new(0, 0, 0, tabContent.UIListLayout.AbsoluteContentSize.Y)
+            
+            local dropdown = {
+                Value = selected,
+                Set = function(self, newValue)
+                    if table.find(options, newValue) then
+                        selected = newValue
+                        dropdownButton.Text = selected
+                        callback(selected)
+                    end
+                end
+            }
+            
+            return dropdown
+        end
+        
+        function tab:CreateTextbox(placeholder, callback)
+            local theme = getgenv().PlutoniumSettings.Theme
+            
+            local textboxFrame = Create("Frame", {
+                BackgroundTransparency = 1,
+                Size = UDim2.new(1, -10, 0, 40),
+                Children = {
+                    Create("TextBox", {
+                        PlaceholderText = placeholder,
+                        Text = "",
+                        TextColor3 = theme.Text,
+                        PlaceholderColor3 = Color3.fromRGB(150, 150, 150),
+                        TextSize = 14,
+                        Font = Enum.Font.Gotham,
+                        BackgroundColor3 = theme.Secondary,
+                        Size = UDim2.new(1, 0, 0, 35),
+                        BorderSizePixel = 0,
+                        Children = {
+                            Create("UICorner", { CornerRadius = UDim.new(0, 4) }),
+                            Create("UIStroke", {
+                                Color = theme.Outline,
+                                Thickness = 1
+                            }),
+                            Create("UIPadding", {
+                                PaddingLeft = UDim.new(0, 10),
+                                PaddingRight = UDim.new(0, 10)
+                            })
+                        }
+                    })
+                }
+            })
+            
+            textboxFrame.Parent = tabContent
+            table.insert(tab.Elements, textboxFrame)
+            
+            local textbox = textboxFrame.TextBox
+            
+            textbox.FocusLost:Connect(function(enterPressed)
+                if enterPressed then
+                    callback(textbox.Text)
+                end
+            end)
+            
+            tabContent.CanvasSize = UDim2.new(0, 0, 0, tabContent.UIListLayout.AbsoluteContentSize.Y)
+            
+            return textbox
+        end
+        
+        function tab:CreateKeybind(name, default, callback)
+            local theme = getgenv().PlutoniumSettings.Theme
+            local key = default or Enum.KeyCode.Unknown
+            local listening = false
+            
+            local keybindFrame = Create("Frame", {
+                BackgroundTransparency = 1,
+                Size = UDim2.new(1, -10, 0, 30),
+                Children = {
+                    Create("TextLabel", {
+                        Text = name,
+                        TextColor3 = theme.Text,
+                        TextSize = 14,
+                        Font = Enum.Font.Gotham,
+                        BackgroundTransparency = 1,
+                        Size = UDim2.new(0.6, 0, 1, 0),
+                        TextXAlignment = Enum.TextXAlignment.Left
+                    }),
+                    Create("TextButton", {
+                        Name = "KeybindButton",
+                        Text = key.Name,
+                        TextColor3 = theme.Text,
+                        TextSize = 14,
+                        Font = Enum.Font.Gotham,
+                        BackgroundColor3 = theme.Secondary,
+                        Size = UDim2.new(0.4, 0, 0, 30),
+                        Position = UDim2.new(0.6, 0, 0, 0),
+                        AutoButtonColor = false,
+                        Children = {
+                            Create("UICorner", { CornerRadius = UDim.new(0, 4) }),
+                            Create("UIStroke", {
+                                Color = theme.Outline,
+                                Thickness = 1
+                            })
+                        }
+                    })
+                }
+            })
+            
+            keybindFrame.Parent = tabContent
+            table.insert(tab.Elements, keybindFrame)
+            
+            local keybindButton = keybindFrame.KeybindButton
+            
+            local function setKey(newKey)
+                key = newKey
+                keybindButton.Text = newKey.Name
+                callback(newKey)
+            end
+            
+            keybindButton.MouseButton1Click:Connect(function()
+                listening = true
+                keybindButton.Text = "..."
+                
+                local connection
+                connection = game:GetService("UserInputService").InputBegan:Connect(function(input)
+                    if listening and input.UserInputType == Enum.UserInputType.Keyboard then
+                        listening = false
+                        setKey(input.KeyCode)
+                        connection:Disconnect()
+                    end
+                end)
+            end)
+            
+            tabContent.CanvasSize = UDim2.new(0, 0, 0, tabContent.UIListLayout.AbsoluteContentSize.Y)
+            
+            local keybind = {
+                Value = key,
+                Set = function(self, newKey)
+                    setKey(newKey)
+                end
+            }
+            
+            return keybind
+        end
+        
+        function tab:CreateColorPicker(name, default, callback)
+            local theme = getgenv().PlutoniumSettings.Theme
+            local color = default or Color3.new(1, 1, 1)
+            local opened = false
+            
+            local colorPickerFrame = Create("Frame", {
+                BackgroundTransparency = 1,
+                Size = UDim2.new(1, -10, 0, 30),
+                Children = {
+                    Create("TextLabel", {
+                        Text = name,
+                        TextColor3 = theme.Text,
+                        TextSize = 14,
+                        Font = Enum.Font.Gotham,
+                        BackgroundTransparency = 1,
+                        Size = UDim2.new(0.6, 0, 1, 0),
+                        TextXAlignment = Enum.TextXAlignment.Left
+                    }),
+                    Create("TextButton", {
+                        Name = "ColorButton",
+                        Text = "",
+                        BackgroundColor3 = color,
+                        Size = UDim2.new(0.4, 0, 0, 30),
+                        AutoButtonColor = false,
+                        Children = {
+                            Create("UICorner", { CornerRadius = UDim.new(0, 4) }),
+                            Create("UIStroke", {
+                                Color = theme.Outline,
+                                Thickness = 1
+                            })
+                        }
+                    }),
+                    Create("Frame", {
+                        Name = "ColorPicker",
+                        BackgroundColor3 = theme.Secondary,
+                        Size = UDim2.new(0, 200, 0, 0),
+                        Position = UDim2.new(0.6, 0, 0, 35),
+                        Visible = false,
+                        ClipsDescendants = true,
+                        Children = {
+                            Create("UICorner", { CornerRadius = UDim.new(0, 4) }),
+                            Create("UIStroke", {
+                                Color = theme.Outline,
+                                Thickness = 1
+                            }),
+                            Create("ImageLabel", {
+                                Name = "ColorMap",
+                                Image = "rbxassetid://2615689005",
+                                BackgroundTransparency = 1,
+                                Size = UDim2.new(1, -40, 0, 150),
+                                Position = UDim2.new(0, 5, 0, 5)
+                            }),
+                            Create("Frame", {
+                                Name = "ColorSlider",
+                                BackgroundColor3 = Color3.new(1, 1, 1),
+                                Size = UDim2.new(0, 20, 0, 150),
+                                Position = UDim2.new(1, -30, 0, 5),
+                                Children = {
+                                    Create("UIGradient", {
+                                        Color = ColorSequence.new({
+                                            ColorSequenceKeypoint.new(0, Color3.new(1, 0, 0)),
+                                            ColorSequenceKeypoint.new(0.17, Color3.new(1, 1, 0)),
+                                            ColorSequenceKeypoint.new(0.33, Color3.new(0, 1, 0)),
+                                            ColorSequenceKeypoint.new(0.5, Color3.new(0, 1, 1)),
+                                            ColorSequenceKeypoint.new(0.67, Color3.new(0, 0, 1)),
+                                            ColorSequenceKeypoint.new(0.83, Color3.new(1, 0, 1)),
+                                            ColorSequenceKeypoint.new(1, Color3.new(1, 0, 0))
+                                        })
+                                    })
+                                }
+                            }),
+                            Create("Frame", {
+                                Name = "NewColor",
+                                BackgroundColor3 = color,
+                                Size = UDim2.new(0, 30, 0, 30),
+                                Position = UDim2.new(0, 5, 0, 160),
+                                Children = {
+                                    Create("UICorner", { CornerRadius = UDim.new(0, 4) }),
+                                    Create("UIStroke", {
+                                        Color = theme.Outline,
+                                        Thickness = 1
+                                    })
+                                }
+                            }),
+                            Create("TextButton", {
+                                Name = "ConfirmButton",
+                                Text = "Confirm",
+                                TextColor3 = theme.Text,
+                                TextSize = 14,
+                                Font = Enum.Font.Gotham,
+                                BackgroundColor3 = theme.Accent,
+                                Size = UDim2.new(0, 80, 0, 25),
+                                Position = UDim2.new(1, -85, 0, 165),
+                                Children = {
+                                    Create("UICorner", { CornerRadius = UDim.new(0, 4) }),
+                                    Create("UIStroke", {
+                                        Color = theme.Outline,
+                                        Thickness = 1
+                                    })
+                                }
+                            })
+                        }
+                    })
+                }
+            })
+            
+            colorPickerFrame.Parent = tabContent
+            table.insert(tab.Elements, colorPickerFrame)
+            
+            local colorButton = colorPickerFrame.ColorButton
+            local colorPicker = colorPickerFrame.ColorPicker
+            local colorMap = colorPicker.ColorMap
+            local colorSlider = colorPicker.ColorSlider
+            local newColor = colorPicker.NewColor
+            local confirmButton = colorPicker.ConfirmButton
+            
+            local function togglePicker()
+                opened = not opened
+                colorPicker.Visible = opened
+                
+                TweenService.Create(colorPicker, TweenInfo.new(0.2), {
+                    Size = UDim2.new(0, 200, 0, opened and 190 or 0)
+                })
+            end
+            
+            colorButton.MouseButton1Click:Connect(togglePicker)
+            
+            local function updateColor(hue, sat, val)
+                color = Color3.fromHSV(hue, sat, val)
+                newColor.BackgroundColor3 = color
+            end
+            
+            local hue, sat, val = color:ToHSV()
+            
+            local function updateFromMap(pos)
+                local x = (pos.X - colorMap.AbsolutePosition.X) / colorMap.AbsoluteSize.X
+                local y = (pos.Y - colorMap.AbsolutePosition.Y) / colorMap.AbsoluteSize.Y
+                
+                sat = math.clamp(x, 0, 1)
+                val = 1 - math.clamp(y, 0, 1)
+                
+                updateColor(hue, sat, val)
+            end
+            
+            local function updateFromSlider(pos)
+                local y = (pos.Y - colorSlider.AbsolutePosition.Y) / colorSlider.AbsoluteSize.Y
+                hue = 1 - math.clamp(y, 0, 1)
+                
+                updateColor(hue, sat, val)
+            end
+            
+            colorMap.MouseButton1Down:Connect(function()
+                updateFromMap(game:GetService("UserInputService"):GetMouseLocation())
+                
+                local connection
+                connection = game:GetService("UserInputService").InputChanged:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseMovement then
+                        updateFromMap(input.Position)
+                    end
+                end)
+                
+                game:GetService("UserInputService").InputEnded:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                        connection:Disconnect()
+                    end
+                end)
+            end)
+            
+            colorSlider.MouseButton1Down:Connect(function()
+                updateFromSlider(game:GetService("UserInputService"):GetMouseLocation())
+                
+                local connection
+                connection = game:GetService("UserInputService").InputChanged:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseMovement then
+                        updateFromSlider(input.Position)
+                    end
+                end)
+                
+                game:GetService("UserInputService").InputEnded:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                        connection:Disconnect()
+                    end
+                end)
+            end)
+            
+            confirmButton.MouseButton1Click:Connect(function()
+                colorButton.BackgroundColor3 = color
+                callback(color)
+                togglePicker()
+            end)
+            
+            tabContent.CanvasSize = UDim2.new(0, 0, 0, tabContent.UIListLayout.AbsoluteContentSize.Y)
+            
+            local picker = {
+                Value = color,
+                Set = function(self, newColor)
+                    color = newColor
+                    colorButton.BackgroundColor3 = color
+                    newColor.BackgroundColor3 = color
+                    callback(color)
+                end
+            }
+            
+            return picker
+        end
+            
+        return tab
+    end
+    
+    function window:SwitchTab(tab)
+        if self.CurrentTab then
+            self.CurrentTab.TabContent.Visible = false
+            TweenService.Create(self.CurrentTab.TabButton, TweenInfo.new(0.2), {
+                BackgroundColor3 = getgenv().PlutoniumSettings.Theme.Secondary
+            })
+        end
+        
+        self.CurrentTab = tab
+        tab.TabContent.Visible = true
+        TweenService.Create(tab.TabButton, TweenInfo.new(0.2), {
+            BackgroundColor3 = getgenv().PlutoniumSettings.Theme.Accent
+        })
+    end
+    
+    function window:Notification(title, text, duration)
+        local theme = getgenv().PlutoniumSettings.Theme
+        duration = duration or 5
+        
+        local notification = Create("Frame", {
+            Name = "Notification",
+            BackgroundColor3 = theme.Notification,
+            Size = UDim2.new(0, 300, 0, 0),
+            Position = UDim2.new(1, -320, 1, -80),
+            AnchorPoint = Vector2.new(1, 1),
+            ClipsDescendants = true,
+            Children = {
+                Create("UICorner", { CornerRadius = UDim.new(0, 6) }),
+                Create("UIStroke", {
+                    Color = theme.Outline,
+                    Thickness = 1
+                }),
+                Create("Frame", {
+                    Name = "TopBar",
+                    BackgroundColor3 = theme.Accent,
+                    Size = UDim2.new(1, 0, 0, 5),
+                    BorderSizePixel = 0
+                }),
+                Create("TextLabel", {
+                    Name = "Title",
+                    Text = title,
+                    TextColor3 = theme.Text,
+                    TextSize = 16,
+                    Font = Enum.Font.GothamBold,
+                    BackgroundTransparency = 1,
+                    Position = UDim2.new(0, 15, 0, 10),
+                    Size = UDim2.new(1, -30, 0, 20),
+                    TextXAlignment = Enum.TextXAlignment.Left
+                }),
+                Create("TextLabel", {
+                    Name = "Text",
+                    Text = text,
+                    TextColor3 = Color3.fromRGB(200, 200, 200),
+                    TextSize = 14,
+                    Font = Enum.Font.Gotham,
+                    BackgroundTransparency = 1,
+                    Position = UDim2.new(0, 15, 0, 35),
+                    Size = UDim2.new(1, -30, 0, 0),
+                    TextXAlignment = Enum.TextXAlignment.Left,
+                    TextWrapped = true
+                }),
+                Create("Frame", {
+                    Name = "ProgressBar",
+                    BackgroundColor3 = theme.Accent,
+                    Size = UDim2.new(1, 0, 0, 2),
+                    Position = UDim2.new(0, 0, 1, -2),
+                    AnchorPoint = Vector2.new(0, 1),
+                    BorderSizePixel = 0
+                })
+            }
+        })
+        
+        notification.Parent = self.ScreenGui
+        
+        local textLabel = notification.Text
+        textLabel.Size = UDim2.new(1, -30, 0, textLabel.TextBounds.Y)
+        
+        local totalHeight = textLabel.AbsolutePosition.Y + textLabel.AbsoluteSize.Y - notification.AbsolutePosition.Y + 15
+        notification.Size = UDim2.new(0, 300, 0, totalHeight)
+        
+        TweenService.Create(notification, TweenInfo.new(0.3), {
+            Size = UDim2.new(0, 300, 0, totalHeight)
+        })
+        
+        local progressBar = notification.ProgressBar
+        TweenService.Create(progressBar, TweenInfo.new(duration), {
+            Size = UDim2.new(0, 0, 0, 2)
+        })
+        
+        spawn(function()
+            wait(duration)
+            TweenService.Create(notification, TweenInfo.new(0.3), {
+                Size = UDim2.new(0, 300, 0, 0)
+            })
+            wait(0.3)
+            notification:Destroy()
+        end)
+    end
+    
+    return window
+end
+
+getgenv().PlutoniumLib = PlutoniumLib
+
+-- Example usage:
+--[[
+loadstring(game:HttpGet("https://raw.githubusercontent.com/username/repo/main/PlutoniumLib.lua"))()
+
+local plutonium = PlutoniumLib:CreateWindow("Plutonium Hub")
+
+local credits = plutonium:CreateTab("Credits")
+credits:CreateLabel("UI by Plutonium")
+credits:CreateLabel("Script by Joey")
+
+local main = plutonium:CreateTab("Main")
+local walkspeed = 16
+
+main:CreateToggle("Speed Toggle", false, function(state)
+    game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = state and walkspeed or 16
+end)
+
+main:CreateSlider(16, 100, 16, function(val)
+    walkspeed = val
+end)
+
+plutonium:Notification("Welcome", "Thank you for using Plutonium Lib!", 5)
+]]
